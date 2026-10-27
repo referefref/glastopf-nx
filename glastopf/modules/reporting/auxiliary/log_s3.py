@@ -68,7 +68,7 @@ class S3Logger(BaseLogger):
                 if attack_event.known_file:
                     logger.debug('sha256:{0} / md5:{1} is a known file, it will not be uploaded.'.format(attack_event.file_sha256, attack_event.file_name))
                     return
-                with file(os.path.join(self.files_dir, attack_event.file_name), 'r') as file_handler:
+                with open(os.path.join(self.files_dir, attack_event.file_name), 'rb') as file_handler:
                     try:
                         # check if file exists in bucket
                         searchFile = self.s3client.list_objects_v2(Bucket=self.bucket, Prefix=attack_event.file_sha256)

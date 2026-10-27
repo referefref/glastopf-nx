@@ -22,27 +22,27 @@ monkey.patch_all()
 import gevent
 import os
 import sys
-import Queue
+import queue
 import uuid
 
-from ConfigParser import ConfigParser, NoSectionError, NoOptionError
+from configparser import ConfigParser, NoSectionError, NoOptionError
 import logging.handlers
 
-from __init__ import __version__
-from modules.HTTP.handler import HTTPHandler
-import modules.HTTP.method_handler as method_handler
-import modules.events.attack as attack
-from modules.handlers.request_handler import RequestHandler
-from modules import logging_handler, vdocs
+from glastopf import __version__
+from glastopf.modules.HTTP.handler import HTTPHandler
+import glastopf.modules.HTTP.method_handler as method_handler
+import glastopf.modules.events.attack as attack
+from glastopf.modules.handlers.request_handler import RequestHandler
+from glastopf.modules import logging_handler, vdocs
 import shutil
-import modules.privileges as privileges
-import modules.processing.profiler as profiler
-from modules.handlers.emulators.dork_list import dork_file_processor
-from modules.handlers.emulators.dork_list import database_sqla
-from modules.handlers.emulators.dork_list import database_mongo
-from modules.handlers.emulators.dork_list import dork_page_generator
-from modules.handlers.emulators.dork_list import mnem_service
-from modules.reporting.main import log_mongodb, log_sql
+import glastopf.modules.privileges as privileges
+import glastopf.modules.processing.profiler as profiler
+from glastopf.modules.handlers.emulators.dork_list import dork_file_processor
+from glastopf.modules.handlers.emulators.dork_list import database_sqla
+from glastopf.modules.handlers.emulators.dork_list import database_mongo
+from glastopf.modules.handlers.emulators.dork_list import dork_page_generator
+from glastopf.modules.handlers.emulators.dork_list import mnem_service
+from glastopf.modules.reporting.main import log_mongodb, log_sql
 from subprocess import check_call
 from sqlalchemy import create_engine
 
@@ -68,17 +68,17 @@ class GlastopfHoneypot(object):
         conf_parser = ConfigParser()
         conf_parser.read(self.config_path)
         self.options = {
-            "uid": conf_parser.get("webserver", "uid").encode('latin1'),
-            "gid": conf_parser.get("webserver", "gid").encode('latin1'),
-            "proxy_enabled": conf_parser.get("webserver", "proxy_enabled").encode('latin1'),
-            "banner": conf_parser.get("misc", "banner").encode('latin1'),
-            "sensorid": conf_parser.get("sensor", "sensorid").encode('latin1'),
+            "uid": conf_parser.get("webserver", "uid"),
+            "gid": conf_parser.get("webserver", "gid"),
+            "proxy_enabled": conf_parser.get("webserver", "proxy_enabled"),
+            "banner": conf_parser.get("misc", "banner"),
+            "sensorid": conf_parser.get("sensor", "sensorid"),
         }
 
         if self.options['sensorid'] == "None":
             self.options['sensorid'] = str(uuid.uuid4())
             conf_parser.set('sensor', 'sensorid', self.options['sensorid'])
-            with open((self.config_path), 'wb') as configfile:
+            with open((self.config_path), 'w') as configfile:
                 conf_parser.write(configfile)
 
         (self.maindb, self.dorkdb) = self.setup_main_database(conf_parser)
@@ -101,7 +101,7 @@ class GlastopfHoneypot(object):
         self.MethodHandlers = method_handler.HTTPMethods(self.data_dir)
 
         #used for post processing (logging and analysis) of attack events
-        self.post_queue = Queue.Queue()
+        self.post_queue = queue.Queue()
         self.workers_enabled = False
 
     def start_background_workers(self):

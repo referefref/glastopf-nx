@@ -17,7 +17,25 @@
 
 from webob import Request, Response
 
+def _local_sockname(environ):
+    """
+    Local address of the client connection. Python 2 gevent exposed it as wsgi.input.rfile._sock;
+    under Python 3 the socket sits one level further down (rfile.raw._sock). Falls back to the
+    server name and port from the WSGI environment.
+    """
+    rfile = getattr(environ['wsgi.input'], 'rfile', None)
+    for obj in (getattr(getattr(rfile, 'raw', None), '_sock', None), getattr(rfile, '_sock', None)):
+        if obj is not None:
+            try:
+                name = obj.getsockname()
+                return (name[0], name[1])
+            except Exception:
+                pass
+    return (environ.get('SERVER_NAME', ''), int(environ.get('SERVER_PORT', 0) or 0))
+
+
 class GlastopfWSGI(object):
+
     def __init__(self, honeypot):
         self.honeypot = honeypot
 
@@ -41,7 +59,7 @@ class GlastopfWSGI(object):
         remote_addr = (req_webob.remote_addr, int(environ["REMOTE_PORT"]))
         if "SERVER_NAME" in environ and "SERVER_PORT" in environ:
             # we could use socket.gethostbyname to get the ip...
-            sensor_addr = (environ['wsgi.input'].rfile._sock.getsockname()[0], environ['wsgi.input'].rfile._sock.getsockname()[1])
+            sensor_addr = _local_sockname(environ)
         else:
             sensor_addr = ("", "")
 

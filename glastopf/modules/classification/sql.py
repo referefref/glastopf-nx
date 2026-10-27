@@ -36,7 +36,14 @@ class SQLiClassifier(object):
 
     @classmethod
     def classify(cls, string):
-        return pylibinjection.detect_sqli(string)
+        # Python 3: pylibinjection takes and returns bytes; keep the Python 2 interface (text in, text fingerprint out)
+        if isinstance(string, str):
+            string = string.encode('utf-8')
+        ret = pylibinjection.detect_sqli(string)
+        if isinstance(ret.get('fingerprint'), bytes):
+            ret['fingerprint'] = ret['fingerprint'].decode('ascii', 'ignore')
+        return ret
+
 
     def _token_squence_matcher(self, query_tokens):
         """ Compares the token squence
@@ -45,7 +52,7 @@ class SQLiClassifier(object):
         """
         best_ratio = 0.0
         best_query = None
-        for i, val in self.token_map.items():
+        for i, val in list(self.token_map.items()):
             # Sequence comparison
             ratio = difflib.SequenceMatcher(None, query_tokens, val["libinj"]["tokens"]).ratio()
             if ratio > best_ratio:
@@ -62,10 +69,10 @@ class SQLiClassifier(object):
         This is usually less successful than the token comparison but catches corner cases.
         """
         ratio = 0.8
-        queries = [query["query"].lower() for query in self.token_map.values()]
+        queries = [query["query"].lower() for query in list(self.token_map.values())]
         best_matches = difflib.get_close_matches(payload, queries, 1, ratio)
         if len(best_matches) > 0:
-            for i, val in self.token_map.items():
+            for i, val in list(self.token_map.items()):
                 if val["query"].lower() == best_matches[0]:
                     return i, ratio
         return None, None

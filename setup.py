@@ -14,8 +14,6 @@ setup(
     author_email='glastopf@public.honeynet.org',
     description='Web application honeypot',
     test_suite='nose.collector',
-    dependency_links=[
-        "git+https://github.com/rep/hpfeeds.git#egg=hpfeeds-0.1",
-    ],
+    python_requires='>=3.9',
     install_requires=open('requirements.txt').read().splitlines(),
 )

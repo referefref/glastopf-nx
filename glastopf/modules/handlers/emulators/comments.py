@@ -1,9 +1,9 @@
 import os
 from random import choice
 import codecs
-from urlparse import parse_qs
+import html
+from urllib.parse import parse_qs
 from string import Template
-import cgi
 from glastopf.modules.handlers import base_emulator
 
 import glastopf.modules.processing.profiler as profiler
@@ -17,7 +17,8 @@ class CommentPoster(base_emulator.BaseEmulator):
         super(CommentPoster, self).__init__(data_dir)
 
     def html_escape(self, comment):
-        return cgi.escape(comment)
+        # cgi.escape was removed in Python 3.8; html.escape(quote=False) is the same transformation
+        return html.escape(comment, quote=False)
 
     def handle(self, attack_event):
         # TODO: Use the unknown emulators _get_template function.
@@ -28,11 +29,11 @@ class CommentPoster(base_emulator.BaseEmulator):
 
         comments_file = os.path.join(self.data_dir, 'comments.txt')
 
-        with codecs.open(os.path.join(pages_path, dork_page)) as dork_page:
+        with codecs.open(os.path.join(pages_path, dork_page), "r", "utf-8") as dork_page:
             try:
                 comment = (parse_qs(attack_event.http_request.request_body)
                            ['comment'][0])
-                clean_comment = self.html_escape(comment.encode('ascii', 'backslashreplace'))
+                clean_comment = self.html_escape(comment.encode('ascii', 'backslashreplace').decode('ascii'))
                 clean_comment = "<br/><br/>" + clean_comment
                 comment = "<br/><br/>" + comment
             except KeyError:
@@ -60,7 +61,9 @@ class CommentPoster(base_emulator.BaseEmulator):
 
             ip_comments = profiler.Profiler.get_comments(ip_address)
             # TODO: handle the ip_comments in the desired way
-            display_comments = general_comments.decode('string_escape')
+            # Python 2 str.decode('string_escape') equivalent
+            display_comments = codecs.escape_decode(general_comments.encode('ascii', 'backslashreplace'))[0].decode('utf-8', 'ignore')
+
             template = Template(dork_page.read())
             response = template.safe_substitute(login_msg="", comments=display_comments)
             attack_event.http_request.set_response(response)

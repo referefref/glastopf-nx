@@ -15,9 +15,9 @@
 # Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import urlparse
-from StringIO import StringIO
-from BaseHTTPServer import BaseHTTPRequestHandler
+import urllib.parse
+from io import BytesIO
+from http.server import BaseHTTPRequestHandler
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,9 +33,13 @@ class HTTPHandler(BaseHTTPRequestHandler):
         :param server_version: set server version to be used in response header (Optional).
         :param sys_version: set sys version to be used in response header (Optional).
         """
-        #Parent class expects fileobjects
-        self.rfile = StringIO(request_string)
-        self.wfile = StringIO()
+        #Parent class expects fileobjects (binary in Python 3)
+        if isinstance(request_string, str):
+            raw_bytes = request_string.encode('utf-8')
+        else:
+            raw_bytes = request_string
+        self.rfile = BytesIO(raw_bytes)
+        self.wfile = BytesIO()
         self.rfile.seek(0)
 
         self.client_address = client_address
@@ -45,7 +49,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
         self.path = ''
         self.command = ''
         self.query = ''
-        self.raw_requestline = ''
+        self.raw_requestline = b''
         self.close_connection = None
         self.request_body = ''
         self.http_host = ''
@@ -60,13 +64,13 @@ class HTTPHandler(BaseHTTPRequestHandler):
             self.sys_version = sys_version
 
         #The following instance variables ensures consistent naming.
-        url = urlparse.urlparse(self.path)
+        url = urllib.parse.urlparse(self.path)
         #path +  parameters + query strign + fragment (ex: /mad.php;woot?a=c#beer.
         self.request_url = self.path
         #the entire http request
         self.request_raw = request_string
         #parsed query dictionary. See http://docs.python.org/2/library/urlparse.html for the format.
-        self.request_query = urlparse.parse_qs(url.query, True)
+        self.request_query = urllib.parse.parse_qs(url.query, True)
         #parameters (no, this it NOT the query string!)
         self.request_params = url.params
         #the clean path. (ex: /info.php)
@@ -102,7 +106,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
 
         # At this point we have parsed the headers which means that
         # the rest of the request is the body
-        self.request_body = self.rfile.read()
+        self.request_body = self.rfile.read().decode('utf-8', 'replace')
 
     def set_response(self, body, http_code=200, headers=(('Content-type', 'text/html'),)):
         """
@@ -117,14 +121,14 @@ class HTTPHandler(BaseHTTPRequestHandler):
         for header in headers:
             self.send_header(header[0], header[1])
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(_to_bytes(body))
 
     def set_raw_response(self, content):
         """
         Provides a convenient way to fully control the entire http response. This comes handy when writing attack modules
         which often breaks protocol standards.
         """
-        self.wfile = StringIO(content)
+        self.wfile = BytesIO(_to_bytes(content))
 
     def send_error(self, code, message=None):
         """
@@ -147,19 +151,19 @@ class HTTPHandler(BaseHTTPRequestHandler):
 
     def get_response_header(self):
         """
-        Returns the http response header.
+        Returns the http response header (text).
         """
-        if "\r\n\r\n" in self.wfile.getvalue():
-            return self.wfile.getvalue().split('\r\n\r\n', 1)[0]
+        if b"\r\n\r\n" in self.wfile.getvalue():
+            return self.wfile.getvalue().split(b'\r\n\r\n', 1)[0].decode('utf-8', 'ignore')
         else:
-            return self.wfile.getvalue()
+            return self.wfile.getvalue().decode('utf-8', 'ignore')
 
     def get_response_body(self):
         """
-        Returns the http response body.
+        Returns the http response body (bytes).
         """
-        if '\r\n\r\n' in self.wfile.getvalue():
-            return self.wfile.getvalue().split('\r\n\r\n', 1)[1]
+        if b'\r\n\r\n' in self.wfile.getvalue():
+            return self.wfile.getvalue().split(b'\r\n\r\n', 1)[1]
         else:
             return self.wfile.getvalue()
 
@@ -174,6 +178,16 @@ class HTTPHandler(BaseHTTPRequestHandler):
         return self.server_version + ' ' + self.sys_version
 
 
+def _to_bytes(data):
+    """
+    Python 3: emulators produce text (str) or binary data (bytes); the response buffer holds bytes.
+    """
+    if isinstance(data, str):
+        return data.encode('utf-8')
+    return data
+
+
 class HTTPError(Exception):
+
     def __init__(self, error_text):
         self.error_text = error_text

@@ -35,7 +35,7 @@ class SQLiEmulator(base_emulator.BaseEmulator):
     def handle(self, attack_event):
         payload = None
         value = None
-        for value_list in attack_event.http_request.request_query.values():
+        for value_list in list(attack_event.http_request.request_query.values()):
             value = value_list[0]
             self.ret = self.sqli_c.classify(value)
             if len(self.ret["fingerprint"]) > 0:
@@ -45,5 +45,7 @@ class SQLiEmulator(base_emulator.BaseEmulator):
             attack_event.http_request.set_raw_response(payload["resp"])
         else:
             response = self.sql_response.get_response("mysql_error").content
-            payload_response = re.sub("PAYLOAD", value, response)
+            # literal replacement (Python 3 re.sub rejects unknown escapes in the payload)
+            payload_response = re.sub("PAYLOAD", lambda _m: value, response)
+
             attack_event.http_request.set_raw_response(dedent(payload_response))

@@ -74,9 +74,9 @@ class StixTransformer(object):
         }
 
         if event.file_name is not None:
-            with file(os.path.join(self.files_dir, event.file_name), 'r') as file_handler:
+            with open(os.path.join(self.files_dir, event.file_name), 'rb') as file_handler:
                 file_data = file_handler.read()
-                file_content = base64.b64encode(file_data)
+                file_content = base64.b64encode(file_data).decode("ascii")
                 jinja_vars['file_content'] = file_content
                 jinja_vars['file_hash_md5'] = hashlib.md5(file_data).hexdigest()
                 jinja_vars['file_hash_sha256'] = hashlib.sha256(file_data).hexdigest()

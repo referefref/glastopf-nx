@@ -1,5 +1,5 @@
 import collections
-import thread
+import _thread
 import time
 import subprocess
 from datetime import datetime, timedelta
@@ -31,12 +31,12 @@ class Profiler(object):
         self.cymru_min_timeout = 2
         self.cymru_timeout = 3
         # self.loggers = logging_handler.get_loggers()
-        thread.start_new_thread(self.run, ())
+        _thread.start_new_thread(self.run, ())
 
     # Reverse the IP address for querying origin.asn.cymru.com
     def reverse_ip(self, ip):
-        ipreg = re.compile("([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})"
-                                    "\.([0-9]{1,3})$")
+        ipreg = re.compile(r"([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})"
+                                    r"\.([0-9]{1,3})$")
         m = ipreg.match(ip)
         if m is not None:
             return (m.group(4) + "." + m.group(3) + "." + m.group(2) +
@@ -125,7 +125,7 @@ class Profiler(object):
     def fetch_as_number(self, ip_profile):
         cmd = subprocess.Popen(
                     ['dig', '+short', self.reverse_ip(ip_profile.ip) +
-                    '.origin.asn.cymru.com', 'TXT'], stdout=subprocess.PIPE)
+                    '.origin.asn.cymru.com', 'TXT'], stdout=subprocess.PIPE, universal_newlines=True)
         time.sleep(self.cymru_min_timeout)
         if cmd.poll() is None:
             time.sleep(self.cymru_timeout)
@@ -152,7 +152,7 @@ class Profiler(object):
     def fetch_as_name(self, ip_profile):
         cmd = subprocess.Popen(
                     ['dig', '+short', ('AS' + ip_profile.as_number +
-                     '.asn.cymru.com'), 'TXT'], stdout=subprocess.PIPE)
+                     '.asn.cymru.com'), 'TXT'], stdout=subprocess.PIPE, universal_newlines=True)
         as_info = cmd.stdout.readline()
         time.sleep(self.cymru_min_timeout)
         if cmd.poll() is None:

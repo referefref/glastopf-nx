@@ -57,10 +57,10 @@ class HPFeedsLogger(BaseLogger):
     def insert(self, attack_event):
         if self._initial_connection_happend:
             if attack_event.file_name is not None:
-                with file(os.path.join(self.files_dir, attack_event.file_name), 'r') as file_handler:
+                with open(os.path.join(self.files_dir, attack_event.file_name), 'rb') as file_handler:
                     logger.debug('Sending file ({0}) using hpfriends on {0}'.format(attack_event.file_name, self.chan_files))
                     file_content = file_handler.read()
-                    file_data = attack_event.file_name + " " + base64.b64encode(file_content)
+                    file_data = attack_event.file_name + " " + base64.b64encode(file_content).decode("ascii")
                     self.hpc.publish(self.chan_files, file_data)
 
             event_data_dict=attack_event.event_dict()

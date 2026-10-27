@@ -114,7 +114,7 @@ ssh:x:106:"""
 
 def _get_entry(user_id):
     # Random username of 3 characters
-    name = "".join([random.choice(string.letters[:26]) for i in xrange(3)])
+    name = "".join([random.choice(string.ascii_letters[:26]) for i in range(3)])
     gid = user_id
     uid = user_id
     g = "\n" + name + ":x:" + str(gid) + ":"
@@ -128,7 +128,7 @@ def _get_entry(user_id):
 def _gen_data():
     data = []
     num_entries = random.randint(1, 10)  # number of random entries
-    for i in xrange(num_entries):
+    for i in range(num_entries):
         # Possible duplication of user id, but very low probability
         user_id = random.randint(1000, 1500)
         data.append(_get_entry(user_id))
@@ -137,7 +137,7 @@ def _gen_data():
 
 def _create_passwd(vpath, data):
     pwd_path = os.path.join(vpath, 'linux/etc/passwd')
-    with open(pwd_path, "wb") as pwd:
+    with open(pwd_path, "w") as pwd:
         pwd.write(PASSWD_STATIC)
         for entry in data:
             pwd.write(entry[0])
@@ -145,7 +145,7 @@ def _create_passwd(vpath, data):
 
 def _create_shadow(vpath, data):
     shd_path = os.path.join(vpath, 'linux/etc/shadow')
-    with open(shd_path, "wb") as shd:
+    with open(shd_path, "w") as shd:
         shd.write(SHADOW_STATIC)
         for entry in data:
             shd.write(entry[1])
@@ -153,7 +153,8 @@ def _create_shadow(vpath, data):
 
 def _create_group(vpath, data):
     grp_path = os.path.join(vpath, 'linux/etc/group')
-    with open(grp_path, "wb") as grp:
+    with open(grp_path, "w") as grp:
+
         grp.write(GROUP_STATIC)
         for entry in data:
             grp.write(entry[2])

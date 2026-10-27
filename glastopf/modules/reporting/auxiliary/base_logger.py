@@ -15,7 +15,9 @@
 # Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from ConfigParser import SafeConfigParser
+# SafeConfigParser is a deprecated alias of ConfigParser in Python 3 (removed in 3.12)
+from configparser import ConfigParser as SafeConfigParser
+
 import os
 
 

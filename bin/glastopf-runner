@@ -1,14 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import logging
 import os
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 import logging.handlers
 import argparse
 import random
 
-from gevent.wsgi import WSGIServer
+# gevent.wsgi was removed in gevent 1.3; gevent.pywsgi is the same server
+from gevent.pywsgi import WSGIServer
 import gevent
 from OpenSSL import crypto
 
@@ -67,7 +68,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.version:
-        print 'Glastopf {0}'.format(glastopf.__version__)
+        print('Glastopf {0}'.format(glastopf.__version__))
         sys.exit(0)
 
     #prepare directory if workdir/data doesn't exist or if we are asked to do it.
@@ -91,10 +92,10 @@ if __name__ == '__main__':
 
     ports = []
     if conf_parser.get('webserver', 'port') and conf_parser.get('webserver', 'port') != '':
-        ports = map(int, conf_parser.get('webserver', 'port').split(','))
+        ports = list(map(int, conf_parser.get('webserver', 'port').split(',')))
     ssl_ports = []
     if conf_parser.has_option('ssl', 'port') and conf_parser.get('ssl', 'port') != '':
-        ssl_ports = map(int, conf_parser.get('ssl', 'port').split(','))
+        ssl_ports = list(map(int, conf_parser.get('ssl', 'port').split(',')))
 
 
     if conf_parser.get("ssl", "enabled"):
@@ -121,9 +122,10 @@ if __name__ == '__main__':
                 client_cert.set_pubkey(client_key)
                 client_cert.sign(client_key, 'sha256')
 
-                with open(os.path.join(args.workdir, ssl['certfile']), "wt") as f:
+                with open(os.path.join(args.workdir, ssl['certfile']), "wb") as f:
                     f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, client_cert))
-                with open(os.path.join(args.workdir, ssl['keyfile']), "wt") as f:
+                with open(os.path.join(args.workdir, ssl['keyfile']), "wb") as f:
+
                     f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, client_key))
         else:
             logger.error("Glastopf SSL config broken. Check SSL config section.")

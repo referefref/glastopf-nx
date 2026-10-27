@@ -15,7 +15,7 @@
 # Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import hashlib
 import os
 import re
@@ -46,32 +46,37 @@ class RFIEmulator(base_emulator.BaseEmulator):
 
     @classmethod
     def get_filename(cls, injected_file):
+        if isinstance(injected_file, str):
+            injected_file = injected_file.encode('utf-8')
         file_name = hashlib.md5(injected_file).hexdigest()
         file_sha256 = hashlib.sha256(injected_file).hexdigest()
         return file_name, file_sha256
 
     def store_file(self, injected_file):
+        if isinstance(injected_file, str):
+            injected_file = injected_file.encode('utf-8')
         file_name, file_sha256 = self.get_filename(injected_file)
         if not os.path.exists(os.path.join(self.files_dir, file_name)):
-            with open(os.path.join(self.files_dir, file_name), 'w+') as local_file:
+            with open(os.path.join(self.files_dir, file_name), 'wb+') as local_file:
+
                 local_file.write(injected_file)
         else:
             self.downloaded_file_exists = True
         return file_name, file_sha256
 
     def download_file(self, url):
-        injectd_url = self.extract_url(urllib2.unquote(url))
+        injectd_url = self.extract_url(urllib.parse.unquote(url))
         try:
-            req = urllib2.Request(injectd_url)
+            req = urllib.request.Request(injectd_url)
             # Set User-Agent to look more credible
             req.add_unredirected_header('User-Agent', '-')
             # FIXME: We need a timeout on read here
-            injected_file = urllib2.urlopen(req, timeout=4).read()
+            injected_file = urllib.request.urlopen(req, timeout=4).read()
             #  If the file is hosted on a SSL enabled host get the certificate
             if re.match('^https', injectd_url, re.IGNORECASE):
-                proto, rest = urllib2.splittype(injectd_url)
-                host, rest = urllib2.splithost(rest)
-                host, port = urllib2.splitport(host)
+                proto, rest = urllib.parse.splittype(injectd_url)
+                host, rest = urllib.parse.splithost(rest)
+                host, port = urllib.parse.splitport(host)
                 if port is None:
                     port = 443
 

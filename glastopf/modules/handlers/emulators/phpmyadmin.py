@@ -33,7 +33,7 @@ class PMAEmulator(base_emulator.BaseEmulator):
         with open(path, 'r') as setup_php:
             self.page = setup_php.read()
         m = hashlib.md5()
-        m.update("%d" % time_stamp)
+        m.update(("%d" % time_stamp).encode("ascii"))
         page_template = Template(self.page)
         response = page_template.substitute(
             token_value=m.hexdigest() )

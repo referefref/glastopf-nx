@@ -37,7 +37,9 @@ class LFIEmulator(base_emulator.BaseEmulator):
 
     def file_path(self, cleaned_path):
         try:
-            pattern = re.compile(r'(\.\./)*')
+            # Python 3.7+ re.split also splits on empty matches; '+' reproduces the Python 2 result
+            pattern = re.compile(r'(\.\./)+')
+
             result = pattern.split(cleaned_path, maxsplit=1)
             path = os.path.join(self.data_dir, 'virtualdocs/linux', result[2])
         except:

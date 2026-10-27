@@ -17,7 +17,7 @@
 
 import hashlib
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from glastopf.modules.handlers import base_emulator
 
 import glastopf.sandbox.sandbox as sandbox
@@ -50,13 +50,17 @@ class PHPCGIRCE(base_emulator.BaseEmulator):
 
     # TODO duplicate code from rfi.py, refactor it
     def get_filename(self, php_code):
+        if isinstance(php_code, str):
+            php_code = php_code.encode('utf-8')
         file_name = hashlib.md5(php_code).hexdigest()
         return file_name
 
     def store_file(self, php_code):
+        if isinstance(php_code, str):
+            php_code = php_code.encode('utf-8')
         file_name = self.get_filename(php_code)
         if not os.path.exists(os.path.join(self.files_dir, file_name)):
-            with open(os.path.join(self.files_dir, file_name), 'w+') as local_file:
+            with open(os.path.join(self.files_dir, file_name), 'wb+') as local_file:
                 local_file.write(php_code)
         return file_name
 
@@ -70,7 +74,8 @@ class PHPCGIRCE(base_emulator.BaseEmulator):
 page = $_GET['page']; include(page); ?>"""
 
         query_dict = attack_event.http_request.request_query
-        url = urllib.unquote(attack_event.http_request.request_url).decode('utf8')
+        url = urllib.parse.unquote(attack_event.http_request.request_url)
+
 
         # php -h
         #   -s   Output HTML syntax highlighted source.
