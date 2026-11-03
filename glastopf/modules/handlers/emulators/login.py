@@ -38,9 +38,13 @@ class LoginEmulator(base_emulator.BaseEmulator):
                 login_msg = "Incorrect login or password! Please try again."
             else:
                 login_msg = ""
-            with codecs.open(os.path.join(self.data_dir, 'comments.txt'), "r", "utf-8") as comments_txt:
-                template = Template(dork_page.read())
-                response = template.safe_substitute(
-                    login_msg=login_msg,
-                    comments=comments_txt.read())
+            comments_file = os.path.join(self.data_dir, 'comments.txt')
+            comments = ''
+            if os.path.isfile(comments_file):
+                with codecs.open(comments_file, "r", "utf-8") as comments_txt:
+                    comments = comments_txt.read()
+            template = Template(dork_page.read())
+            response = template.safe_substitute(
+                login_msg=login_msg,
+                comments=comments)
             attack_event.http_request.set_response(response)
